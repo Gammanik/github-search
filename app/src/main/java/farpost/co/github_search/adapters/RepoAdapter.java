@@ -1,12 +1,15 @@
 package farpost.co.github_search.adapters;
 
-
+import android.content.Context;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,24 +63,32 @@ public class RepoAdapter extends BaseAdapter {
 
     private static class RepoViewHolder {
 
+        private Context context;
+        private ImageView repoOwnerAvatar;
         private TextView textRepoName;
         private TextView textRepoDescription;
         private TextView textLanguage;
         private TextView textStars;
 
-        public RepoViewHolder(View view) {
+        RepoViewHolder(View view) {
+            context = view.getContext();
+//            todo: USE FUCKING BUTTERKNIFE
+            repoOwnerAvatar = (ImageView) view.findViewById(R.id.avatar);
             textRepoName = (TextView) view.findViewById(R.id.text_repo_name);
             textRepoDescription = (TextView) view.findViewById(R.id.text_repo_description);
             textLanguage = (TextView) view.findViewById(R.id.text_language);
             textStars = (TextView) view.findViewById(R.id.text_stars);
         }
 
-        public void setRepo(Repo repo) {
-//            todo: just description and avatar
+        void setRepo(Repo repo) {
             textRepoName.setText(repo.name);
             textRepoDescription.setText(repo.description);
             textLanguage.setText("Language: " + repo.language);
             textStars.setText("Stars: " + repo.stargazersCount);
+            //loading repoOwner avatar
+            Glide.with(context).load(repo.owner.avatar_url).into(repoOwnerAvatar);
         }
+
+
     }
 }
