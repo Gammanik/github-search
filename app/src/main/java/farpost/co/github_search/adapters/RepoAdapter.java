@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +89,12 @@ public class RepoAdapter extends BaseAdapter {
             textLanguage.setText("Language: " + repo.language);
             textStars.setText("Stars: " + repo.stargazersCount);
             //loading repoOwner avatar
-            Glide.with(context).load(repo.owner.avatar_url).into(repoOwnerAvatar);
+            RequestOptions requestOptions = new RequestOptions();
+            requestOptions = requestOptions.transforms(new CenterCrop(), new RoundedCorners(20));
+            Glide.with(context)
+                    .load(repo.owner.avatar_url)
+                    .apply(requestOptions)
+                    .into(repoOwnerAvatar);
         }
 
 
