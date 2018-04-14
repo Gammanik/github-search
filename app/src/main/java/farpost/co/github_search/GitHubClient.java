@@ -36,7 +36,7 @@ public class GitHubClient {
         return instance;
     }
 
-    public Observable<ReposSearchResponse> searchRepos(@NonNull String userName) {
-        return gitHubService.searchRepositories(userName);
+    public Observable<ReposSearchResponse> searchRepos(@NonNull String userName, int page) {
+        return gitHubService.searchRepositories(userName, page);
     }
 }

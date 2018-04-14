@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
 
@@ -19,6 +20,8 @@ public class SearchActivity extends AppCompatActivity {
     private static final String TAG = SearchActivity.class.getSimpleName();
     private RepoAdapter adapter = new RepoAdapter();
     private Subscription subscription;
+    private int currentPage = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,21 +30,40 @@ public class SearchActivity extends AppCompatActivity {
 
         final ListView listView = (ListView) findViewById(R.id.list_view_repos);
         listView.setAdapter(adapter);
+        listView.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE
+                        && (listView.getLastVisiblePosition() - listView.getHeaderViewsCount() -
+                        listView.getFooterViewsCount()) >= (adapter.getCount() - 1)) {
+
+                    // Now your listview has hit the bottom
+                    searchRepos("game", ++currentPage);
+
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+
+            });
 
         Button clickButton = (Button) findViewById(R.id.button_search);
         clickButton.setOnClickListener( new View.OnClickListener() {
 
+            //todo: make it onTextChanged
             @Override
             public void onClick(View v) {
                 Log.d("SearchActivity", "clicked!");
-                searchRepos("game");
+                searchRepos("game", currentPage);
             }
         });
     }
 
-    private void searchRepos(String query) {
+    private void searchRepos(String query, int page) {
         subscription = GitHubClient.getInstance()
-                .searchRepos(query)
+                .searchRepos(query, page)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<ReposSearchResponse>() {
@@ -67,6 +89,7 @@ public class SearchActivity extends AppCompatActivity {
         if (subscription != null && !subscription.isUnsubscribed()) {
             subscription.unsubscribe();
         }
+        adapter.clearRepos();
         super.onDestroy();
     }
 

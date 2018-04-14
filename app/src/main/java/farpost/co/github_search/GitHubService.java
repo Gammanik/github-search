@@ -8,5 +8,5 @@ import rx.Observable;
 
 public interface GitHubService {
     @GET("search/repositories")
-    Observable<ReposSearchResponse> searchRepositories(@Query("q") String q);
+    Observable<ReposSearchResponse> searchRepositories(@Query("q") String q, @Query("page") int page);
 }

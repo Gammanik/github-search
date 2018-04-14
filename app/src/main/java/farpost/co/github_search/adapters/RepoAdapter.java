@@ -51,9 +51,12 @@ public class RepoAdapter extends BaseAdapter {
         if (repos == null) {
             return;
         }
-        gitHubRepos.clear();
         gitHubRepos.addAll(repos);
         notifyDataSetChanged();
+    }
+
+    public void clearRepos() {
+        gitHubRepos.clear();
     }
 
     private View createView(ViewGroup parent) {
