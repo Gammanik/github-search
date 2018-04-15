@@ -1,7 +1,6 @@
 package farpost.co.github_search;
 
 import android.app.ProgressDialog;
-import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,7 +26,10 @@ import rx.schedulers.Schedulers;
 public class SearchActivity extends AppCompatActivity {
 
     private final String KEY_REPO_LIST = "KEY_REPO_LIST";
+    private final String KEY_IS_SCREEN_JUST_ROTATED = "KEY_SCREEN_JUST_ROTATED";
+    private final String KEY_CURRENT_PAGE = "KEY_CURRENT_PAGE";
     private static final String TAG = SearchActivity.class.getSimpleName();
+
     private RepoAdapter adapter = new RepoAdapter();
     private Subscription subscription;
     private int currentPage = 1;
@@ -36,7 +38,7 @@ public class SearchActivity extends AppCompatActivity {
     /*a small kostyl here - because when we're turning the screen and if there is
     * any text inside the search box then onTextChanged is invoking anyway
     * I mean I could just use android:configChanges="keyboardHidden|orientation" */
-    private boolean SCREEN_JUST_ROTATED = false;
+    private boolean isScreenJustRotated = false;
 
     @BindView(R.id.edit_text_search) EditText search;
     @BindView(R.id.list_view_repos) ListView listView;
@@ -46,41 +48,38 @@ public class SearchActivity extends AppCompatActivity {
     @OnTextChanged(R.id.edit_text_search) //todo: it is invoking when activity is recreating
     public void onTextChanged(CharSequence text) {
 
-        if(!SCREEN_JUST_ROTATED) {
+        if(!isScreenJustRotated) {
             Log.e(TAG, "onTextChanged");
             String searchQuery = text.toString();
-//            adapter.clearRepos();
-            adapter.notifyDataSetChanged();
+            adapter.clearRepos();
             currentPage = 1; //to handle the case we scrolled before
 
             if (text.length() != 0)
                 searchRepos(searchQuery, currentPage);
 
         }
+
+        isScreenJustRotated = false;
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        //todo:outState.putByte(SCREEN_JUST_ROTATED); - to let the new created activity know
-        SCREEN_JUST_ROTATED = true;
-
-        Log.e(TAG, "send repos: " + adapter.getRepos().toString());
+        //to make the newly created activity do not make search again
+        outState.putBoolean(KEY_IS_SCREEN_JUST_ROTATED, true);
+        outState.putInt(KEY_CURRENT_PAGE, currentPage);
         outState.putParcelableArrayList(KEY_REPO_LIST, adapter.getRepos());
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        SCREEN_JUST_ROTATED = true;
 
+        ArrayList<Repo> repos = savedInstanceState.getParcelableArrayList(KEY_REPO_LIST);
 
-        if(savedInstanceState != null) {
-            ArrayList<Repo> repos = savedInstanceState.getParcelableArrayList(KEY_REPO_LIST);
-            Log.e(TAG, "got repos: " + repos.get(0).name);
-        } else {
-            Log.e(TAG, "savedInstState is null");
-        }
+        adapter.notifyDataSetChanged();
+        adapter.setRepos(repos);
+
     }
 
     @Override
@@ -88,6 +87,11 @@ public class SearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
         ButterKnife.bind(this);
+
+        if(savedInstanceState != null) {
+            isScreenJustRotated = savedInstanceState.getBoolean(KEY_IS_SCREEN_JUST_ROTATED);
+            currentPage = savedInstanceState.getInt(KEY_CURRENT_PAGE);
+        }
 
         listView.setAdapter(adapter);
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -97,7 +101,6 @@ public class SearchActivity extends AppCompatActivity {
                 if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE
                         && (listView.getLastVisiblePosition() - listView.getHeaderViewsCount() -
                         listView.getFooterViewsCount()) >= (adapter.getCount() - 1)) {
-
                     // when listView has hit the bottom
                     searchRepos(search.getText().toString(), ++currentPage);
                 }
@@ -110,7 +113,7 @@ public class SearchActivity extends AppCompatActivity {
 
     }
 
-    private void searchRepos(final String query, int page) {
+    private void searchRepos(final String query, final int page) {
         showDialog("searching for " + query);
         subscription = GitHubClient.getInstance()
                 .searchRepos(query, page)
@@ -135,8 +138,9 @@ public class SearchActivity extends AppCompatActivity {
                     }
 
                     @Override public void onNext(ReposSearchResponse reposSearchResponse) {
-                        Log.d(TAG, "In onNext()");
+                        Log.d(TAG, "In onNext() page: " + page);
                         hideDialog();
+                        adapter.notifyDataSetChanged();
                         adapter.setRepos(reposSearchResponse.items);
                     }
                 });
@@ -163,7 +167,12 @@ public class SearchActivity extends AppCompatActivity {
         if (subscription != null && !subscription.isUnsubscribed()) {
             subscription.unsubscribe();
         }
-//        adapter.clearRepos(); //todo it was the reason of all this shit
+
+        if(mProgressDialog != null) {
+            mProgressDialog.cancel();
+        }
+//in case of clearing we're not able to restore the repos in onRestoreInstanceState
+//        adapter.clearRepos();
         super.onDestroy();
     }
 
