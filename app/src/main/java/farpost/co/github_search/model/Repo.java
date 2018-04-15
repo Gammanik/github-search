@@ -1,7 +1,12 @@
 package farpost.co.github_search.model;
 
 
-public class Repo {
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Log;
+import android.widget.TextView;
+
+public class Repo implements Parcelable{
 
     public final int id;
     public final String name;
@@ -17,5 +22,59 @@ public class Repo {
         this.description = description;
         this.language = language;
         this.stargazersCount = stargazersCount;
+    }
+
+    public Repo(Parcel in) {
+        Log.d("REPO", "creating class " + in.readString());
+
+        this.id = in.readInt();
+        this.name = in.readString();
+        this.description = in.readString();
+        this.language = in.readString();
+        this.stargazersCount = in.readInt();
+
+        this.owner = in.readParcelable(getClass().getClassLoader()); //todo: not sure about getClass() which one should I get??
+    }
+
+    public static final Creator<Repo> CREATOR = new Creator<Repo>() {
+        @Override
+        public Repo createFromParcel(Parcel in) {
+            return new Repo(in);
+        }
+
+        @Override
+        public Repo[] newArray(int size) {
+            Log.e("REPO", "CREATING REPOS NEW ARRAY");
+            return new Repo[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        Log.d("REPO", "writing class " + name);
+
+        parcel.writeInt(id);
+        parcel.writeString(name);
+        parcel.writeString(description);
+        parcel.writeString(language);
+        parcel.writeInt(stargazersCount);
+
+        parcel.writeParcelable(owner, i);
+
+        //todo: ??? put strings as an array?
+//        String[] toSend = new String[] {
+//                this.id,
+//                this.description,
+//                this.language,
+//                String.valueOf(this.id),
+//                String.valueOf(this.stargazersCount)
+//        };
+//
+//        dest.writeStringArray(toSend);
     }
 }

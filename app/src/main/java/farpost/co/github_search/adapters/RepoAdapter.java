@@ -55,6 +55,10 @@ public class RepoAdapter extends BaseAdapter {
         notifyDataSetChanged();
     }
 
+    public ArrayList<Repo> getRepos() {
+        return (ArrayList<Repo>) gitHubRepos;
+    }
+
     public void clearRepos() {
         gitHubRepos.clear();
     }
