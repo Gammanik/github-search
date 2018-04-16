@@ -4,7 +4,6 @@ package farpost.co.github_search.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
-import android.widget.TextView;
 
 public class Repo implements Parcelable{
 
@@ -65,16 +64,5 @@ public class Repo implements Parcelable{
         parcel.writeInt(stargazersCount);
 
         parcel.writeParcelable(owner, i);
-
-        //todo: ??? put strings as an array?
-//        String[] toSend = new String[] {
-//                this.id,
-//                this.description,
-//                this.language,
-//                String.valueOf(this.id),
-//                String.valueOf(this.stargazersCount)
-//        };
-//
-//        dest.writeStringArray(toSend);
     }
 }

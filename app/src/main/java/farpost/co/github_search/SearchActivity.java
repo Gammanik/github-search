@@ -122,9 +122,7 @@ public class SearchActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<ReposSearchResponse>() {
-                    @Override public void onCompleted() {
-                        Log.d(TAG, "In onCompleted()");
-                    }
+                    @Override public void onCompleted() {}
 
                     @Override public void onError(Throwable e) {
                         e.printStackTrace();
