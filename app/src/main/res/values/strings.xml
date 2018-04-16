@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">github-search</string>
     <string name="greeting">Hello, please choose an option to continue: </string>
-    <string name="github_option">log in with gitHub</string>
+    <string name="github_option">log in/continue with gitHub</string>
     <string name="anonimous_option">continue anonymously</string>
 
     <string name="saved_user_info">KEY_USER_INFO</string>

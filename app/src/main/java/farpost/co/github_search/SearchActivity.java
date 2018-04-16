@@ -56,7 +56,6 @@ public class SearchActivity extends AppCompatActivity {
     public void onTextChanged(CharSequence text) {
 
         if(!isScreenJustRotated) {
-            Log.e(TAG, "onTextChanged");
             String searchQuery = text.toString();
             adapter.clearRepos();
             currentPage = 1; //to handle the case we scrolled before
@@ -99,12 +98,11 @@ public class SearchActivity extends AppCompatActivity {
             currentPage = savedInstanceState.getInt(KEY_CURRENT_PAGE);
         }
 
-        if(!getLoggedUserName().isEmpty()) {
+        if(isUserLoggedIn()) {
             Toast.makeText(getApplicationContext(),
                     "Hello again, " + getLoggedUserName() + "!",
                     Toast.LENGTH_SHORT).show();
         }
-        Log.e(TAG, "logged user:" + getLoggedUserName());
 
         listView.setAdapter(adapter);
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -145,7 +143,6 @@ public class SearchActivity extends AppCompatActivity {
                         textView.setText("nothing is found on query: " + query);
 
                         hideDialog();
-                        Log.d(TAG, "In onError()");
                     }
 
                     @Override public void onNext(ReposSearchResponse reposSearchResponse) {
@@ -162,6 +159,10 @@ public class SearchActivity extends AppCompatActivity {
         String keyUserInfo = getResources().getString(R.string.saved_user_info);
 
         return sharedPref.getString(keyUserInfo, "");
+    }
+
+    private boolean isUserLoggedIn() {
+        return !getLoggedUserName().isEmpty();
     }
 
     private void logoutUser() {
@@ -208,10 +209,15 @@ public class SearchActivity extends AppCompatActivity {
 /////////////////menu shit
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if(!getLoggedUserName().isEmpty()) {
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.menu_main, menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+
+        if(isUserLoggedIn()) {
+            menu.findItem(R.id.action_login).setVisible(false);
+        } else {
+            menu.findItem(R.id.action_logout).setVisible(false);
         }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -222,7 +228,20 @@ public class SearchActivity extends AppCompatActivity {
             logoutUser();
             return true;
         }
+
+        if (id == R.id.action_login) {
+            Intent intent = new Intent(getApplicationContext(), GitHubAuthActivity.class);
+            startActivity(intent);
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(getApplicationContext(), AuthActivity.class);
+        startActivity(intent);
     }
 
 }

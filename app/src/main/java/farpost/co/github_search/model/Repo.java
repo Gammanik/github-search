@@ -24,8 +24,6 @@ public class Repo implements Parcelable{
     }
 
     public Repo(Parcel in) {
-        Log.d("REPO", "creating class " + in.readString());
-
         this.id = in.readInt();
         this.name = in.readString();
         this.description = in.readString();
@@ -43,7 +41,6 @@ public class Repo implements Parcelable{
 
         @Override
         public Repo[] newArray(int size) {
-            Log.e("REPO", "CREATING REPOS NEW ARRAY");
             return new Repo[size];
         }
     };
