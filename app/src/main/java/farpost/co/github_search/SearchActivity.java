@@ -1,13 +1,20 @@
 package farpost.co.github_search;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.AbsListView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +63,6 @@ public class SearchActivity extends AppCompatActivity {
 
             if (text.length() != 0)
                 searchRepos(searchQuery, currentPage);
-
         }
 
         isScreenJustRotated = false;
@@ -92,6 +98,13 @@ public class SearchActivity extends AppCompatActivity {
             isScreenJustRotated = savedInstanceState.getBoolean(KEY_IS_SCREEN_JUST_ROTATED);
             currentPage = savedInstanceState.getInt(KEY_CURRENT_PAGE);
         }
+
+        if(!getLoggedUserName().isEmpty()) {
+            Toast.makeText(getApplicationContext(),
+                    "Hello again, " + getLoggedUserName() + "!",
+                    Toast.LENGTH_SHORT).show();
+        }
+        Log.e(TAG, "logged user:" + getLoggedUserName());
 
         listView.setAdapter(adapter);
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -144,7 +157,25 @@ public class SearchActivity extends AppCompatActivity {
                 });
     }
 
-    private void showDialog(String message) {
+    private String getLoggedUserName() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String keyUserInfo = getResources().getString(R.string.saved_user_info);
+
+        return sharedPref.getString(keyUserInfo, "");
+    }
+
+    private void logoutUser() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPref.edit()
+                .remove(getResources().getString(R.string.saved_user_info))
+                .apply();
+
+        Toast.makeText(getApplicationContext(),"Logout successfully!", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(getApplicationContext(), AuthActivity.class);
+        startActivity(intent);
+    }
+
+    private void showDialog(String message) { //put them in a view logic
         if(mProgressDialog == null) {
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -172,6 +203,26 @@ public class SearchActivity extends AppCompatActivity {
 //in case of clearing we're not able to restore the repos in onRestoreInstanceState
 //        adapter.clearRepos();
         super.onDestroy();
+    }
+
+/////////////////menu shit
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if(!getLoggedUserName().isEmpty()) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.menu_main, menu);
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_logout) {
+            logoutUser();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 }

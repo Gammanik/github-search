@@ -1,9 +1,10 @@
 package farpost.co.github_search;
 
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,29 +17,35 @@ import butterknife.OnClick;
 import farpost.co.github_search.env.AppSettings;
 import farpost.co.github_search.model.AccessToken;
 import farpost.co.github_search.model.User;
-import rx.Observer;
 import rx.SingleSubscriber;
-import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class AuthActivity extends AppCompatActivity {
 
     private static final String TAG = AuthActivity.class.getSimpleName();
-    private Subscription subscription;
+    private ProgressDialog mProgressDialog;
 
     @BindView(R.id.button_github) Button buttonGitHub;
+    @BindView(R.id.button_anon) Button buttonAnonymous;
 
     @OnClick(R.id.button_github)
-    void onClick() {
-        Log.e(TAG, "onClick");
+    void onClickGitHub() {
 
         if(!isUserLoggedIn()) {
+            //redirect to gitHub webView
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(AppSettings.GITHUB_AUTHORIZE_URL.toString()));
             startActivity(intent);
-
-            Log.d(TAG, AppSettings.GITHUB_AUTHORIZE_URL.toString());
+        } else {
+            Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+            startActivity(intent);
         }
+    }
+
+    @OnClick(R.id.button_anon)
+    void onClickAnon() {
+        Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+        startActivity(intent);
     }
 
     @Override
@@ -48,8 +55,9 @@ public class AuthActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         if(isUserLoggedIn()) {
-            Log.d(TAG, "userLoggedIn");
-            //todo: start SearchActivity
+            Log.e(TAG, "userLoggedIn");
+            //start SearchActivity if we're logged?
+            //but it's not written in the task
         }
 
     }
@@ -60,7 +68,6 @@ public class AuthActivity extends AppCompatActivity {
 
         Uri uri = getIntent().getData();
         if(uri != null && uri.toString().startsWith(AppSettings.REDIRECT_URL)) {
-            Log.e(TAG, uri.toString());
 
             String code = uri.getQueryParameter("code");
             getAccessToken(AppSettings.CLIENT_ID, AppSettings.CLIENT_SECRET, code);
@@ -68,6 +75,7 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void getAccessToken(final String clientId, final String clientSecret, final String code) {
+        showDialog("fetching user info");
         GitHubClient.getInstance()
                 .getAccessToken(clientId, clientSecret, code)
                 .subscribeOn(Schedulers.io())
@@ -98,9 +106,11 @@ public class AuthActivity extends AppCompatActivity {
                 .subscribe(new SingleSubscriber<User>() {
                     @Override
                     public void onSuccess(User user) {
-                        //todo: start SearchActivity
-                        Log.d(TAG, user.name);
-//                        saveUserInfo(user.name);
+                        saveUserInfo(user.name);
+                        hideDialog();
+
+                        Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                        startActivity(intent);
                     }
 
                     @Override
@@ -112,14 +122,35 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private boolean isUserLoggedIn() {
-        return false;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String keyUserInfo = getResources().getString(R.string.saved_user_info);
+        String userInfo = sharedPref.getString(keyUserInfo, "");
+
+        return !userInfo.isEmpty();
     }
 
     private void saveUserInfo(String name) {
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(getString(R.string.saved_user_info), name);
-        editor.apply();
+        //no .apply() here to make sure it's saved before another activity will read it
+        editor.commit();
+    }
+
+    private void showDialog(String message) { //put them in a view logic
+        if(mProgressDialog == null) {
+            mProgressDialog = new ProgressDialog(this);
+            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            mProgressDialog.setCancelable(true);
+        }
+        mProgressDialog.setMessage(message);
+        mProgressDialog.show();
+    }
+
+    private void hideDialog() {
+        if(mProgressDialog != null && mProgressDialog.isShowing()) {
+            mProgressDialog.dismiss();
+        }
     }
 
 }
